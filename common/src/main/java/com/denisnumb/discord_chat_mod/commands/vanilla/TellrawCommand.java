@@ -23,6 +23,8 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import static com.denisnumb.discord_chat_mod.MinecraftUtils.getPlayerListBySelector;
 import static com.denisnumb.discord_chat_mod.discord.DiscordChannelRegistry.getAllContexts;
@@ -33,6 +35,7 @@ import static com.denisnumb.discord_chat_mod.chat_style.Parameters.MESSAGE;
 
 public class TellrawCommand {
     private static final String WANDERING_TRADER_AVATAR_URL = "https://media.forgecdn.net/avatars/thumbnails/621/734/256/256/638012977134943311.png";
+    private static final Pattern SCHEDULED_RESTART_PATTERN = Pattern.compile("^\\[\\s*Server\\s*\\]\\s*Scheduled restart in\\s+(.+)$", Pattern.CASE_INSENSITIVE);
 
     public static void register(CommandDispatcher<CommandSourceStack> dispatcher, CommandBuildContext context){
         dispatcher.register(
@@ -49,6 +52,10 @@ public class TellrawCommand {
                                                     String messageText = parseTellrawMessageForDiscord(ctx.getSource(), message);
 
                                                     if (trySendAfkStatusMessage(ctx.getSource(), messageText)) {
+                                                        return;
+                                                    }
+
+                                                    if (trySendScheduledRestartMessage(messageText)) {
                                                         return;
                                                     }
 
@@ -155,6 +162,41 @@ public class TellrawCommand {
         return true;
     }
 
+    private static boolean trySendScheduledRestartMessage(String messageText) {
+        String normalized = collapseSpaces(messageText.strip());
+        Matcher matcher = SCHEDULED_RESTART_PATTERN.matcher(normalized);
+        if (!matcher.matches()) {
+            return false;
+        }
+
+        String timeText = matcher.group(1).strip();
+        String authorText = "Scheduled restart in " + timeText;
+        int color = getScheduledRestartColor(timeText);
+
+        DiscordChatStyleProvider.DiscordMessageComponents components = new DiscordChatStyleProvider.DiscordMessageComponents(
+                Optional.empty(),
+                Optional.of(new EmbedBuilder()
+                        .setColor(color)
+                        .setAuthor(authorText)
+                        .build())
+        );
+
+        sendMessageFromServer(ChannelCategory.TELLRAW_COMMAND, getAllContexts(), components);
+        return true;
+    }
+
+    private static int getScheduledRestartColor(String timeText) {
+        String normalizedTime = timeText.toLowerCase();
+
+        if (normalizedTime.contains("60 second") || normalizedTime.contains("1 minute")) {
+            return ChatFormatting.RED.getColor();
+        }
+        if (normalizedTime.contains("5 minute")) {
+            return ChatFormatting.GOLD.getColor();
+        }
+        return ChatFormatting.YELLOW.getColor();
+    }
+
     private static boolean trySendWanderingTraderStatusMessage(String messageText) {
         String normalized = messageText.strip();
 
@@ -204,6 +246,10 @@ public class TellrawCommand {
             }
         }
         return false;
+    }
+
+    private static String collapseSpaces(String text) {
+        return text.replaceAll("\\s+", " ").trim();
     }
 
     private static String applyStyles(Style style, String translatedText){
