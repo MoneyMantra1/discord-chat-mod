@@ -32,6 +32,8 @@ import static com.denisnumb.discord_chat_mod.discord.chat_style.DiscordChatStyle
 import static com.denisnumb.discord_chat_mod.chat_style.Parameters.MESSAGE;
 
 public class TellrawCommand {
+    private static final String WANDERING_TRADER_AVATAR_URL = "https://s.namemc.com/i/383453d721df721f.png";
+
     public static void register(CommandDispatcher<CommandSourceStack> dispatcher, CommandBuildContext context){
         dispatcher.register(
                 Commands.literal("tellraw")
@@ -47,6 +49,10 @@ public class TellrawCommand {
                                                     String messageText = parseTellrawMessageForDiscord(ctx.getSource(), message);
 
                                                     if (trySendAfkStatusMessage(ctx.getSource(), messageText)) {
+                                                        return;
+                                                    }
+
+                                                    if (trySendWanderingTraderStatusMessage(messageText)) {
                                                         return;
                                                     }
 
@@ -149,10 +155,46 @@ public class TellrawCommand {
         return true;
     }
 
+    private static boolean trySendWanderingTraderStatusMessage(String messageText) {
+        String normalized = messageText.strip();
+
+        WanderingTraderStatus traderStatus = null;
+        if (normalized.startsWith("A Wandering Trader has appeared at ") && normalized.endsWith(".")) {
+            traderStatus = WanderingTraderStatus.APPEARED;
+        } else if (normalized.equals("The Wandering Trader has disappeared for now.")) {
+            traderStatus = WanderingTraderStatus.DISAPPEARED;
+        }
+
+        if (traderStatus == null) {
+            return false;
+        }
+
+        int color = switch (traderStatus) {
+            case APPEARED -> ChatFormatting.GOLD.getColor();
+            case DISAPPEARED -> ChatFormatting.RED.getColor();
+        };
+
+        DiscordChatStyleProvider.DiscordMessageComponents components = new DiscordChatStyleProvider.DiscordMessageComponents(
+                Optional.empty(),
+                Optional.of(new EmbedBuilder()
+                        .setColor(color)
+                        .setAuthor(normalized, null, WANDERING_TRADER_AVATAR_URL)
+                        .build())
+        );
+
+        sendMessageFromServer(ChannelCategory.PLAYER_JOIN_LEAVE, getAllContexts(), components);
+        return true;
+    }
+
     private enum AfkStatus {
         AWAY,
         BACK,
         KICKED
+    }
+
+    private enum WanderingTraderStatus {
+        APPEARED,
+        DISAPPEARED
     }
 
     private static boolean matchesPlayerStatus(String normalized, String playerName, String... suffixes) {
