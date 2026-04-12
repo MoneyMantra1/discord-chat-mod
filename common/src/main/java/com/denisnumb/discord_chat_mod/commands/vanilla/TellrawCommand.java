@@ -112,9 +112,14 @@ public class TellrawCommand {
         }
 
         AfkStatus afkStatus = null;
-        if (normalized.equals(playerName + " is away")) {
+        if (matchesPlayerStatus(normalized, playerName,
+                " is away",
+                " went AFK")) {
             afkStatus = AfkStatus.AWAY;
-        } else if (normalized.equals(playerName + " is back") || normalized.equals(playerName + " is back!")) {
+        } else if (matchesPlayerStatus(normalized, playerName,
+                " is back",
+                " is back!",
+                " is no longer AFK")) {
             afkStatus = AfkStatus.BACK;
         } else if (normalized.equals(playerName + " has been kicked for inactivity")) {
             afkStatus = AfkStatus.KICKED;
@@ -152,6 +157,15 @@ public class TellrawCommand {
         AWAY,
         BACK,
         KICKED
+    }
+
+    private static boolean matchesPlayerStatus(String normalized, String playerName, String... suffixes) {
+        for (String suffix : suffixes) {
+            if (normalized.equals(playerName + suffix)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private static String applyStyles(Style style, String translatedText){
