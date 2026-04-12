@@ -32,7 +32,7 @@ import static com.denisnumb.discord_chat_mod.discord.chat_style.DiscordChatStyle
 import static com.denisnumb.discord_chat_mod.chat_style.Parameters.MESSAGE;
 
 public class TellrawCommand {
-    private static final String WANDERING_TRADER_AVATAR_URL = "https://s.namemc.com/i/383453d721df721f.png";
+    private static final String WANDERING_TRADER_AVATAR_URL = "https://media.forgecdn.net/avatars/thumbnails/621/734/256/256/638012977134943311.png";
 
     public static void register(CommandDispatcher<CommandSourceStack> dispatcher, CommandBuildContext context){
         dispatcher.register(
