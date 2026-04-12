@@ -65,13 +65,17 @@ public class MinecraftUtils {
     }
 
     public static List<ServerPlayer> getPlayerListBySelector(String selector){
+        return getPlayerListBySelector(selector, null);
+    }
+
+    public static List<ServerPlayer> getPlayerListBySelector(String selector, @Nullable CommandSourceStack source){
         try {
-            CommandSourceStack fakeSource = server.createCommandSourceStack()
-                    .withSuppressedOutput()
-                    .withPermission(4);
+            CommandSourceStack selectorSource = source != null
+                    ? source.withSuppressedOutput().withPermission(4)
+                    : server.createCommandSourceStack().withSuppressedOutput().withPermission(4);
             EntitySelectorParser parser = new EntitySelectorParser(new StringReader(selector), true);
 
-            return parser.parse().findPlayers(fakeSource);
+            return parser.parse().findPlayers(selectorSource);
         } catch (Exception e){
             return List.of();
         }
