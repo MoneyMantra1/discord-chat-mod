@@ -129,11 +129,7 @@ public class TellrawCommand {
             return false;
         }
 
-        String authorText = switch (afkStatus) {
-            case AWAY -> playerName + " is away";
-            case BACK -> playerName + " is back";
-            case KICKED -> playerName + " has been kicked for inactivity";
-        };
+        String authorText = normalized;
 
         int color = switch (afkStatus) {
             case AWAY -> ChatFormatting.GOLD.getColor();
